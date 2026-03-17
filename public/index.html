@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="normalize.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico">
+    <title>Graph</title>
+</head>
+<body>
+    <div class="app">
+        <canvas id="canvas">
+             Your browser does not support the HTML5 canvas tag.
+        </canvas>
+
+        <div class="sidepanel">
+            <div class="node-info">
+                <div>
+                    <input type="checkbox" id="directed-edges-input" disabled>
+                    <label for="directed-edges-input">Directed Edges</label>
+                </div>
+                <div>
+                    <input type="text" id="node-label-input" style="width: 3rem;" disabled>
+                    <label for="node-label-input">Node Label</label>
+                </div>
+                <div>
+                    <input type="text" id="edge-weight-input" style="width: 3rem;" disabled>
+                    <label for="edge-weight-input">Edge Weight</label>
+                </div>
+            </div>
+
+            <input type="button" id="random-coloring-button" value="Randomly Color Nodes">
+            <input type="button" id="select-mst-button" value="Select MST" disabled>
+            <input type="button" id="color-refinement-button" value="Color Refinement" disabled>
+        </div>
+
+        <div class="bottompanel">
+            <input type="button" id="clear-button" value="Clear Selection">
+
+            <div class="right">
+                <input type="button" id="triangle-button" value="Triangle">
+            </div>
+        </div>
+    </div>
+
+    <script src="algorithms.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

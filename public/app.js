@@ -1,0 +1,374 @@
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+var lastTime = 0, accumulator = 0, fixedTimeStep = 1 / 60
+
+class Graph {
+    constructor() {
+        this.nodes = []
+        this.edges = []
+    }
+
+    update(timeStep) {
+        this.edges = this.edges.filter(edge => !edge.shouldBeDeleted)
+        this.nodes = this.nodes.filter(node => !node.shouldBeDeleted)
+
+        for (let node of this.nodes) {
+            node.update(timeStep)
+        }
+
+        for (let edge of this.edges) {
+            edge.update(timeStep)
+            edge.applyForce(this.nodes.length * 40)
+        }
+    }
+}
+
+class Node {
+    constructor(x, y, label) {
+        this.size = 40
+        
+        this.x = x
+        this.y = y
+        this.label = label
+        this.color = "#000000"
+
+        this.velocityX = 0
+        this.velocityY = 0
+        this.selected = false
+        this.shouldBeDeleted = false
+    }
+
+    update(timeStep) {
+        this.x += this.velocityX * timeStep
+        this.y += this.velocityY * timeStep
+        this.velocityX *= 0.9
+        this.velocityY *= 0.9
+        this.clamp()
+    }
+
+    isPointInside(px, py) {
+        let dx = px - this.x
+        let dy = py - this.y
+        return dx * dx + dy * dy <= this.size * this.size
+    }
+
+    clamp() {
+        this.x = Math.min(Math.max(0, this.x), canvas.width)
+        this.y = Math.min(Math.max(0, this.y), canvas.height)
+        this.velocityX = Math.min(Math.max(-1000, this.velocityX), 1000)
+        this.velocityY = Math.min(Math.max(-1000, this.velocityY), 1000)
+        this.size = Math.min(Math.max(20, this.size), 80)
+    }
+}
+
+class Edge {
+    constructor(from, to) {
+        this.from = from
+        this.to = to
+        this.weight = 1
+        this.color = "#000000"
+
+        this.selected = false
+        this.shouldBeDeleted = false
+    }
+
+    update(timeStep) {
+        this.clamp()
+    }
+
+    isPointInside(px, py) {
+        let dx = this.to.x - this.from.x
+        let dy = this.to.y - this.from.y
+        let length = Math.sqrt(dx * dx + dy * dy)
+        let t = ((px - this.from.x) * dx + (py - this.from.y) * dy) / (length * length)
+
+        if (t >= 0 && t <= 1) {
+            let closestX = this.from.x + t * dx
+            let closestY = this.from.y + t * dy
+            let distance = Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2)
+            return distance < 10
+        }
+
+        return false
+    }
+
+    applyForce(strength) {
+        let dx = this.from.x - this.to.x
+        let dy = this.from.y - this.to.y
+        let distance = Math.sqrt(dx * dx + dy * dy)
+        
+        if (distance > 0) {
+            let targetDistance = this.from.size + this.to.size + strength
+            let force = (distance - targetDistance) * 0.1
+            let fx = (dx / distance) * force
+            let fy = (dy / distance) * force
+
+            this.from.velocityX -= fx
+            this.from.velocityY -= fy
+            this.to.velocityX += fx
+            this.to.velocityY += fy
+        }
+    }
+
+    clamp() {
+        this.size = Math.min(Math.max(0, this.size), 5)
+    }
+}
+
+const game = {
+    graph: new Graph(),
+    transform: {
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0
+    }
+}
+
+function relativeLuminance(hexColor) {
+    let r = parseInt(hexColor.substr(1, 2), 16)
+    let g = parseInt(hexColor.substr(3, 2), 16)
+    let b = parseInt(hexColor.substr(5, 2), 16)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function drawTitle() {
+    ctx.fillStyle = "black"
+    ctx.font = "80px Times"
+    ctx.textAlign = "left"
+    ctx.textBaseline = "top"
+    ctx.fillText("Graph", 10, 10)
+}
+
+function drawNode(node) {
+    ctx.fillStyle = node.selected ? "red" : node.color
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, node.size, 0, 2 * Math.PI)
+    ctx.fill()
+
+    ctx.fillStyle = relativeLuminance(node.color) < 128 ? "white" : "black"
+    ctx.font = "20px Arial"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText(node.label, node.x, node.y)
+}
+
+function drawEdge(edge) {
+    ctx.strokeStyle = edge.selected ? "red" : edge.color
+    ctx.lineWidth = (edge.from.size + edge.to.size) * 0.1 + edge.weight
+    ctx.beginPath()
+    ctx.moveTo(edge.from.x, edge.from.y)
+    ctx.lineTo(edge.to.x, edge.to.y)
+    ctx.stroke()
+}
+
+function drawStatus() {
+    let nodesSelected = game.graph.nodes.filter(node => node.selected).length
+    let edgesSelected = game.graph.edges.filter(edge => edge.selected).length
+    
+    let text = ""
+    if (nodesSelected == 0 && edgesSelected == 0)      text += `${game.graph.nodes.length} Nodes, ${game.graph.edges.length} Edges`
+    else if (nodesSelected == 1 && edgesSelected == 0) text += `Node ${game.graph.nodes.find(n => n.selected).label} has been selected`
+    else if (nodesSelected > 1 && edgesSelected == 0)  text += `${nodesSelected} Nodes have been selected`
+    else                                               text += `${nodesSelected} Nodes and ${edgesSelected} Edges have been selected`
+
+    ctx.fillStyle = "gray"
+    ctx.font = "40px Arial"
+    ctx.textAlign = "left"
+    ctx.textBaseline = "top"
+    ctx.fillText(text, 15, 120)
+}
+
+function draw(alpha) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.setTransform(game.transform.scale, 0, 0, game.transform.scale, game.transform.offsetX, game.transform.offsetY)
+
+    for (let edge of game.graph.edges) {
+        drawEdge(edge)
+    }
+
+    for (let node of game.graph.nodes) {
+        drawNode(node)
+    }
+
+    ctx.resetTransform()
+
+    drawTitle()
+    drawStatus()
+}
+
+function setNodeInfo() {
+    let nodesSelected = game.graph.nodes.filter(node => node.selected).length
+    let edgesSelected = game.graph.edges.filter(edge => edge.selected).length
+    
+    let nodeLabelInput = document.getElementById("node-label-input")
+    let edgeSizeInput = document.getElementById("edge-weight-input")
+
+    if (nodesSelected == 1 && edgesSelected == 0) {
+        let node = game.graph.nodes.find(n => n.selected)
+        nodeLabelInput.value = node.label
+    } else if (edgesSelected == 1 && nodesSelected == 0) {
+        let edge = game.graph.edges.find(e => e.selected)
+        edgeSizeInput.value = edge.weight
+    } else {
+        nodeLabelInput.value = ""
+        edgeSizeInput.value = ""
+    }
+}
+
+function update(timeStep) {
+    game.graph.update(timeStep)
+    clampTransforms()
+    setNodeInfo()
+}
+
+function loop(timestamp) {
+    const currentTime = timestamp / 1000
+    deltaTime = currentTime - lastTime
+    lastTime = currentTime
+
+    deltaTime = Math.min(deltaTime, 0.25)
+    accumulator += deltaTime
+    
+    while (accumulator >= fixedTimeStep) {
+        update(fixedTimeStep)
+        accumulator -= fixedTimeStep
+    }
+    
+    const alpha = accumulator / fixedTimeStep
+    draw(alpha)
+    
+    requestAnimationFrame(loop)
+}
+
+function clampTransforms() {
+    game.transform.scale = Math.min(Math.max(0.4, game.transform.scale), 5)
+    game.transform.offsetX = Math.min(Math.max(-canvas.width/2, game.transform.offsetX), canvas.width*3/2)
+    game.transform.offsetY = Math.min(Math.max(-canvas.height/2, game.transform.offsetY), canvas.height*3/2)
+}
+
+function triangle() {
+    let middleX = canvas.width / 2
+    let middleY = canvas.height / 2
+    
+    game.graph.nodes = []
+    game.graph.edges = []
+    game.graph.nodes.push(new Node(middleX - 200, middleY - 200, "A"))
+    game.graph.nodes.push(new Node(middleX - 300, middleY + 100, "B"))
+    game.graph.nodes.push(new Node(middleX, middleY, "C"))
+    game.graph.edges.push(new Edge(game.graph.nodes[0], game.graph.nodes[1]))
+    game.graph.edges.push(new Edge(game.graph.nodes[1], game.graph.nodes[2]))
+    game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[0]))
+}
+
+function init() {
+    canvas.width = window.innerWidth * 2
+    canvas.height = window.innerHeight * 2
+
+    let mousemoved = false
+    let draggingNode = null
+
+    canvas.onmousedown = (e) => {
+        mousemoved = false
+
+        for (let node of game.graph.nodes) {
+            if (node.isPointInside(e.clientX * 2, e.clientY * 2)) {
+                draggingNode = node
+                break
+            }
+        }
+    }
+
+    canvas.onmouseup = (e) => {
+        draggingNode = null
+    }
+
+    canvas.onmousemove = (e) => {
+        if (e.buttons === 1) {
+            mousemoved = true
+
+            if (draggingNode) {
+                draggingNode.velocityX += e.movementX * 10
+                draggingNode.velocityY += e.movementY * 10
+            } else {
+                for (let node of game.graph.nodes) {
+                    node.velocityX += e.movementX * 10
+                    node.velocityY += e.movementY * 10
+                }
+            }
+        }
+    }
+
+    canvas.onwheel = (e) => {
+        for (let node of game.graph.nodes) {
+            node.size += e.deltaY * -0.03
+            node.clamp()
+        }
+    }
+
+    canvas.onclick = (e) => {
+        if (mousemoved) return 
+
+        let rect = canvas.getBoundingClientRect()
+        let x = (e.clientX - rect.left) * 2
+        let y = (e.clientY - rect.top) * 2
+
+        for (let node of game.graph.nodes) {
+            if (node.isPointInside(x, y)) {
+                node.selected = !node.selected
+                return
+            }
+        }
+
+        for (let edge of game.graph.edges) {
+            if (edge.isPointInside(x, y)) {
+                edge.selected = !edge.selected
+                return
+            }
+        }
+
+        let newNode = new Node(x, y, String.fromCharCode(65 + game.graph.nodes.length))
+        game.graph.nodes.push(newNode)
+        for (let node of game.graph.nodes) {
+            if (node !== game.graph.nodes[game.graph.nodes.length - 1]) {
+                game.graph.edges.push(new Edge(newNode, node))
+            }
+        }
+    }
+
+    document.onkeydown = (e) => {
+        if (e.key === "Delete") {
+            game.graph.edges.filter(edge => edge.selected || edge.from.selected || edge.to.selected).forEach(edge => edge.shouldBeDeleted = true)
+            game.graph.nodes.filter(node => node.selected).forEach(node => node.shouldBeDeleted = true)
+        }
+    }
+
+    document.getElementById("clear-button").onclick = () => {
+        game.graph.edges.forEach(edge => edge.selected = false)
+        game.graph.nodes.forEach(node => node.selected = false)
+    }
+
+    document.getElementById("select-mst-button").onclick = () => {
+        mst(game.graph)
+    }
+
+    document.getElementById("color-refinement-button").onclick = () => {
+        colorRefinement(game.graph)
+    }
+
+    document.getElementById("random-coloring-button").onclick = () => {
+        randomlyColorNodes(game.graph)
+    }
+
+    document.getElementById("triangle-button").onclick = () => {
+        triangle()
+    }
+
+    triangle()
+
+    requestAnimationFrame((timestamp) => {
+        lastTime = timestamp / 1000
+        requestAnimationFrame(loop)
+    })
+}
+
+init()
