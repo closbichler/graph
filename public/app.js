@@ -62,10 +62,10 @@ class Node {
 }
 
 class Edge {
-    constructor(from, to) {
+    constructor(from, to, weight=1) {
         this.from = from
         this.to = to
-        this.weight = 1
+        this.weight = weight
         this.color = "#000000"
 
         this.selected = false
@@ -255,9 +255,9 @@ function triangle() {
     game.graph.nodes.push(new Node(middleX - 200, middleY - 200, "A"))
     game.graph.nodes.push(new Node(middleX - 300, middleY + 100, "B"))
     game.graph.nodes.push(new Node(middleX, middleY, "C"))
-    game.graph.edges.push(new Edge(game.graph.nodes[0], game.graph.nodes[1]))
-    game.graph.edges.push(new Edge(game.graph.nodes[1], game.graph.nodes[2]))
-    game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[0]))
+    game.graph.edges.push(new Edge(game.graph.nodes[0], game.graph.nodes[1], 4))
+    game.graph.edges.push(new Edge(game.graph.nodes[1], game.graph.nodes[2], 2))
+    game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[0], 6))
 }
 
 function init() {
@@ -347,8 +347,8 @@ function init() {
         game.graph.nodes.forEach(node => node.selected = false)
     }
 
-    document.getElementById("select-mst-button").onclick = () => {
-        mst(game.graph)
+    document.getElementById("select-mst-kruskal-button").onclick = () => {
+        mstKruskal(game.graph)
     }
 
     document.getElementById("color-refinement-button").onclick = () => {
