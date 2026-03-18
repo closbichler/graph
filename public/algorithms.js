@@ -85,7 +85,7 @@ function randomlyColorNodes(graph) {
     }
 }
 
-function colorRefinementStep(graph) {
+function colorRefinementStep(graph) {    
     let newColors = new Map()
     let signatures = []
 

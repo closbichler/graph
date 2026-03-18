@@ -12,7 +12,7 @@ class Graph {
         for (let node of this.nodes) {
             node.update(timeStep)
 
-            if (game.force) {
+            if (game.force && game.overlappingForce) {
                 for (let otherNode of this.nodes) {
                     if (node !== otherNode) {
                         let dx = node.x - otherNode.x
@@ -30,7 +30,7 @@ class Graph {
             edge.update(timeStep)
 
             if (game.force) {
-                edge.applyEdgeForces(this.nodes.length * 70, 0.08)
+                edge.applyEdgeForces(this.nodes.length * 30, 0.08)
             }
         }
     }
@@ -129,7 +129,7 @@ class Edge {
         let distance = Math.sqrt(dx * dx + dy * dy)
         
         if (distance > 0) {
-            let targetDistance = this.from.size + this.to.size + nodeDistance
+            let targetDistance = Math.pow(this.from.size + this.to.size, 2) * 0.03 + nodeDistance
             let force = (distance - targetDistance) * strength            
             let fx = (dx / distance) * force
             let fy = (dy / distance) * force
@@ -153,6 +153,7 @@ var lastTime = 0, accumulator = 0, fixedTimeStep = 1 / 60
 const game = {
     graph: new Graph(),
     force: true,
+    overlappingForce: true,
     connectWhenInserting: true,
     transform: {
         scale: 1,
@@ -471,6 +472,30 @@ function init() {
         pentagon()
     }
 
+    document.getElementById("adjacency-matrix-button").onclick = () => {
+        let matrix = prompt("Enter adjacency matrix (rows separated by commas, values separated by spaces):")
+        if (!matrix) return
+
+        let rows = matrix.trim().split(",")
+        let size = rows.length
+
+        game.graph.nodes = []
+        game.graph.edges = []
+
+        for (let i = 0; i < size; i++) {
+            game.graph.nodes.push(new Node(canvas.width / 2 + Math.cos((i / size) * 2 * Math.PI) * 200, canvas.height / 2 + Math.sin((i / size) * 2 * Math.PI) * 200, String.fromCharCode(65 + i)))
+        }
+
+        for (let i = 0; i < size; i++) {
+            let values = rows[i].trim().split(" ")
+            for (let j = 0; j < values.length; j++) {
+                if (values[j] !== "0") {
+                    game.graph.edges.push(new Edge(game.graph.nodes[i], game.graph.nodes[j], parseFloat(values[j])))
+                }
+            }
+        }
+    }
+
     /* side panel */ 
 
     document.getElementById("directed-edges-input").checked = game.graph.directed
@@ -491,7 +516,6 @@ function init() {
     }
     
     document.getElementById("color-refinement-button").onclick = () => {
-        game.graph.clearSelections()
         colorRefinementStep(game.graph)
     }
     
