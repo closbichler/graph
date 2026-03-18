@@ -9,3 +9,7 @@ Simple webapp for graph algorithms
 ## TODO
 - Color refinement
 - Multiple graphs
+- Editable label and weights
+- Influence edge direction when inserting
+- Fix Kruskal (it has a bug when having two graphs)
+- Fix directed cycle detection
