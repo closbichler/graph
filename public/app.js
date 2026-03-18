@@ -14,11 +14,33 @@ class Graph {
 
         for (let node of this.nodes) {
             node.update(timeStep)
+            for (let otherNode of this.nodes) {
+                if (node !== otherNode) {
+                    let dx = node.x - otherNode.x
+                    let dy = node.y - otherNode.y
+                    let distance = Math.sqrt(dx * dx + dy * dy)
+                    if (distance < node.size + otherNode.size) {
+                        node.applyForce(10, dx, dy)
+                    }
+                }
+            }
         }
 
         for (let edge of this.edges) {
             edge.update(timeStep)
-            edge.applyForce(this.nodes.length * 40)
+            edge.applyEdgeForces(this.nodes.length * 40, 0.08)
+        }
+    }
+
+    clearSelections() {
+        for (let node of this.nodes) {
+            node.selected = false
+            node.color = "#000000"
+        }
+
+        for (let edge of this.edges) {
+            edge.selected = false
+            edge.color = "#000000"
         }
     }
 }
@@ -59,6 +81,12 @@ class Node {
         this.velocityY = Math.min(Math.max(-1000, this.velocityY), 1000)
         this.size = Math.min(Math.max(20, this.size), 80)
     }
+
+    applyForce(force, dx, dy) {
+        let length = Math.sqrt(dx * dx + dy * dy)
+        this.velocityX += (dx / length) * force
+        this.velocityY += (dy / length) * force
+    }
 }
 
 class Edge {
@@ -92,14 +120,14 @@ class Edge {
         return false
     }
 
-    applyForce(strength) {
+    applyEdgeForces(nodeDistance, strength) {
         let dx = this.from.x - this.to.x
         let dy = this.from.y - this.to.y
         let distance = Math.sqrt(dx * dx + dy * dy)
         
         if (distance > 0) {
-            let targetDistance = this.from.size + this.to.size + strength
-            let force = (distance - targetDistance) * 0.1
+            let targetDistance = this.from.size + this.to.size + nodeDistance
+            let force = (distance - targetDistance) * strength            
             let fx = (dx / distance) * force
             let fy = (dy / distance) * force
 
@@ -111,7 +139,7 @@ class Edge {
     }
 
     clamp() {
-        this.size = Math.min(Math.max(0, this.size), 5)
+        this.weight = Math.min(Math.max(0, this.weight), 5)
     }
 }
 
@@ -348,17 +376,27 @@ function init() {
     }
 
     document.getElementById("select-mst-kruskal-button").onclick = () => {
-        mstKruskal(game.graph)
+        game.graph.clearSelections()
+        let cost = mstKruskal(game.graph)
+        console.log("MST Cost:", cost)
     }
 
+    document.getElementById("select-mst-prim-button").onclick = () => {
+        game.graph.clearSelections()
+        let cost = mstPrim(game.graph)
+        console.log("MST Cost:", cost)
+    }
+    
     document.getElementById("color-refinement-button").onclick = () => {
+        game.graph.clearSelections()
         colorRefinement(game.graph)
     }
-
+    
     document.getElementById("random-coloring-button").onclick = () => {
+        game.graph.clearSelections()
         randomlyColorNodes(game.graph)
     }
-
+    
     document.getElementById("triangle-button").onclick = () => {
         triangle()
     }
