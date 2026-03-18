@@ -1,3 +1,9 @@
+function getRandomColor() {
+    return `#${Math.floor(Math.random() * 0xFFFFFF)
+        .toString(16)
+        .padStart(6, "0")}`;
+}
+
 function hasCycleUndirected(edges, node = null, visited = new Set()) {
     if (node === null) node = edges[0].from
     if (visited.has(node)) return true
@@ -73,15 +79,32 @@ function mstPrim(graph) {
     return cost
 }
 
-function colorRefinement(graph) {
-    console.log("not implemented yet")
-    alert("not implemented yet")
-}
-
 function randomlyColorNodes(graph) {
     for (let node of graph.nodes) {
-        node.color = `#${Math.floor(Math.random() * 0xFFFFFF)
-            .toString(16)
-            .padStart(6, "0")}`;
+        node.color = getRandomColor()
+    }
+}
+
+function colorRefinementStep(graph) {
+    let newColors = new Map()
+    let signatures = []
+
+    for (let node of graph.nodes) {
+        let neighborColors = graph.edges
+            .filter(e => e.from === node || e.to === node)
+            .map(e => (e.from === node ? e.to.color : e.from.color))
+            .sort()
+            .join(",")
+
+        let signature = `${node.color},${neighborColors}`
+        signatures.push({ node, signature })
+
+        if (!newColors.has(signature)) {
+            newColors.set(signature, getRandomColor())
+        }
+    }
+    
+    for (let { node, signature } of signatures) {
+        node.color = newColors.get(signature)
     }
 }

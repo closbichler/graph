@@ -492,7 +492,7 @@ function init() {
     
     document.getElementById("color-refinement-button").onclick = () => {
         game.graph.clearSelections()
-        colorRefinement(game.graph)
+        colorRefinementStep(game.graph)
     }
     
     document.getElementById("random-coloring-button").onclick = () => {

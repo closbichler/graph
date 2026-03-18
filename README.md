@@ -7,7 +7,6 @@ Simple webapp for graph algorithms
 - Cycle detection
 
 ## TODO
-- Color refinement
 - Multiple graphs
 - Editable label and weights
 - Influence edge direction when inserting
