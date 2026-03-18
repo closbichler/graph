@@ -20,7 +20,7 @@ body {
     display: flex;
     top: 0px;
     right: 0px;
-    width: 10em;
+    width: 15em;
     height: 100%;
     padding: 1em;
     flex-direction: column;
@@ -48,7 +48,7 @@ body {
     display: flex;
     bottom: 0px;
     left: 0px;
-    width: calc(100% - 13em);
+    width: calc(100% - 18em);
     height: 1.5em;
     padding: 0.5em;
     flex-direction: row;
@@ -57,4 +57,30 @@ body {
 
 .bottompanel .right {
     margin-left: auto;
+}
+
+.action-zone {
+    position: fixed;
+    display: flex;
+    top: 7em;
+    left: 0px;
+    width: 10em;
+    height: fit-content;
+    padding: 0.5em;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.action-zone input {
+    transition: opacity 0.5s ease;
+    opacity: 1;
+}
+
+.action-zone input.fade-out {
+    opacity: 0;
+}
+
+.action-zone input.hidden {
+    display: none;
+    pointer-events: none;
 }

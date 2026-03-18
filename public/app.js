@@ -1,11 +1,8 @@
-const canvas = document.getElementById("canvas")
-const ctx = canvas.getContext("2d")
-var lastTime = 0, accumulator = 0, fixedTimeStep = 1 / 60
-
 class Graph {
     constructor() {
         this.nodes = []
         this.edges = []
+        this.directed = false
     }
 
     update(timeStep) {
@@ -14,13 +11,16 @@ class Graph {
 
         for (let node of this.nodes) {
             node.update(timeStep)
-            for (let otherNode of this.nodes) {
-                if (node !== otherNode) {
-                    let dx = node.x - otherNode.x
-                    let dy = node.y - otherNode.y
-                    let distance = Math.sqrt(dx * dx + dy * dy)
-                    if (distance < node.size + otherNode.size) {
-                        node.applyForce(10, dx, dy)
+
+            if (game.force) {
+                for (let otherNode of this.nodes) {
+                    if (node !== otherNode) {
+                        let dx = node.x - otherNode.x
+                        let dy = node.y - otherNode.y
+                        let distance = Math.sqrt(dx * dx + dy * dy)
+                        if (distance < node.size + otherNode.size) {
+                            node.applyForce(10, dx, dy)
+                        }
                     }
                 }
             }
@@ -28,7 +28,10 @@ class Graph {
 
         for (let edge of this.edges) {
             edge.update(timeStep)
-            edge.applyEdgeForces(this.nodes.length * 40, 0.08)
+
+            if (game.force) {
+                edge.applyEdgeForces(this.nodes.length * 70, 0.08)
+            }
         }
     }
 
@@ -143,8 +146,14 @@ class Edge {
     }
 }
 
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+var lastTime = 0, accumulator = 0, fixedTimeStep = 1 / 60
+
 const game = {
     graph: new Graph(),
+    force: true,
+    connectWhenInserting: true,
     transform: {
         scale: 1,
         offsetX: 0,
@@ -161,7 +170,7 @@ function relativeLuminance(hexColor) {
 
 function drawTitle() {
     ctx.fillStyle = "black"
-    ctx.font = "80px Times"
+    ctx.font = "8em Times"
     ctx.textAlign = "left"
     ctx.textBaseline = "top"
     ctx.fillText("Graph", 10, 10)
@@ -174,18 +183,45 @@ function drawNode(node) {
     ctx.fill()
 
     ctx.fillStyle = relativeLuminance(node.color) < 128 ? "white" : "black"
-    ctx.font = "20px Arial"
+    ctx.font = "2em Arial"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
     ctx.fillText(node.label, node.x, node.y)
 }
 
 function drawEdge(edge) {
+    var dx = edge.to.x - edge.from.x
+    var dy = edge.to.y - edge.from.y
+    var angle = Math.atan2(dy, dx)
+
+    var headlen = (edge.from.size + edge.to.size) * 0.2 + 20
+
+    // move endpoint to node rim
+    var toX = edge.to.x - Math.cos(angle) * edge.to.size
+    var toY = edge.to.y - Math.sin(angle) * edge.to.size
+
     ctx.strokeStyle = edge.selected ? "red" : edge.color
     ctx.lineWidth = (edge.from.size + edge.to.size) * 0.1 + edge.weight
+    ctx.lineCap = "round"
+
     ctx.beginPath()
     ctx.moveTo(edge.from.x, edge.from.y)
-    ctx.lineTo(edge.to.x, edge.to.y)
+    ctx.lineTo(toX, toY)
+    ctx.moveTo(toX, toY)
+
+    if (game.graph.directed) {
+        // arrow head
+        ctx.lineTo(
+            toX - headlen * Math.cos(angle - Math.PI / 6),
+            toY - headlen * Math.sin(angle - Math.PI / 6)
+        )
+        ctx.moveTo(toX, toY)
+        ctx.lineTo(
+            toX - headlen * Math.cos(angle + Math.PI / 6),
+            toY - headlen * Math.sin(angle + Math.PI / 6)
+        )
+    }
+
     ctx.stroke()
 }
 
@@ -200,10 +236,10 @@ function drawStatus() {
     else                                               text += `${nodesSelected} Nodes and ${edgesSelected} Edges have been selected`
 
     ctx.fillStyle = "gray"
-    ctx.font = "40px Arial"
+    ctx.font = "2.5em Arial"
     ctx.textAlign = "left"
     ctx.textBaseline = "top"
-    ctx.fillText(text, 15, 120)
+    ctx.fillText(text, 15, 160)
 }
 
 function draw(alpha) {
@@ -224,7 +260,7 @@ function draw(alpha) {
     drawStatus()
 }
 
-function setNodeInfo() {
+function updateNodeInfo() {
     let nodesSelected = game.graph.nodes.filter(node => node.selected).length
     let edgesSelected = game.graph.edges.filter(edge => edge.selected).length
     
@@ -241,12 +277,19 @@ function setNodeInfo() {
         nodeLabelInput.value = ""
         edgeSizeInput.value = ""
     }
+
+    /* action zone */
+    let connectNodesButton = document.getElementById("connect-nodes-button")
+    if (nodesSelected == 2 && edgesSelected == 0) {
+        showWithFade(connectNodesButton)
+    } else {
+        hideWithFade(connectNodesButton)
+    }
 }
 
 function update(timeStep) {
     game.graph.update(timeStep)
     clampTransforms()
-    setNodeInfo()
 }
 
 function loop(timestamp) {
@@ -288,9 +331,40 @@ function triangle() {
     game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[0], 6))
 }
 
+function pentagon() {
+    let middleX = canvas.width / 2
+    let middleY = canvas.height / 2
+    
+    game.graph.nodes = []
+    game.graph.edges = []
+    for (let i = 0; i < 5; i++) {
+        let angle = (i / 5) * 2 * Math.PI - Math.PI / 2
+        game.graph.nodes.push(new Node(middleX + Math.cos(angle) * 200, middleY + Math.sin(angle) * 200, String.fromCharCode(65 + i)))
+    }
+    for (let i = 0; i < 5; i++) {
+        game.graph.edges.push(new Edge(game.graph.nodes[i], game.graph.nodes[(i + 1) % 5], Math.floor(Math.random() * 5) + 1))
+    }
+}
+
+function hideWithFade(el) {
+    el.classList.add("fade-out")
+
+    setTimeout(() => {
+        el.classList.add("hidden")
+    }, 500)
+}
+
+function showWithFade(el) {
+    el.classList.remove("hidden")
+    el.classList.add("fade-out")
+
+    requestAnimationFrame(() => {
+        el.classList.remove("fade-out")
+    })
+}
+
 function init() {
-    canvas.width = window.innerWidth * 2
-    canvas.height = window.innerHeight * 2
+    /* inputs */
 
     let mousemoved = false
     let draggingNode = null
@@ -334,7 +408,7 @@ function init() {
     }
 
     canvas.onclick = (e) => {
-        if (mousemoved) return 
+        if (mousemoved) return
 
         let rect = canvas.getBoundingClientRect()
         let x = (e.clientX - rect.left) * 2
@@ -343,6 +417,7 @@ function init() {
         for (let node of game.graph.nodes) {
             if (node.isPointInside(x, y)) {
                 node.selected = !node.selected
+                updateNodeInfo()
                 return
             }
         }
@@ -350,17 +425,22 @@ function init() {
         for (let edge of game.graph.edges) {
             if (edge.isPointInside(x, y)) {
                 edge.selected = !edge.selected
+                updateNodeInfo()
                 return
             }
         }
 
         let newNode = new Node(x, y, String.fromCharCode(65 + game.graph.nodes.length))
         game.graph.nodes.push(newNode)
-        for (let node of game.graph.nodes) {
-            if (node !== game.graph.nodes[game.graph.nodes.length - 1]) {
-                game.graph.edges.push(new Edge(newNode, node))
+        if (game.connectWhenInserting) {
+            for (let node of game.graph.nodes) {
+                if (node !== game.graph.nodes[game.graph.nodes.length - 1]) {
+                    game.graph.edges.push(new Edge(newNode, node))
+                }
             }
         }
+
+        updateNodeInfo()
     }
 
     document.onkeydown = (e) => {
@@ -368,11 +448,34 @@ function init() {
             game.graph.edges.filter(edge => edge.selected || edge.from.selected || edge.to.selected).forEach(edge => edge.shouldBeDeleted = true)
             game.graph.nodes.filter(node => node.selected).forEach(node => node.shouldBeDeleted = true)
         }
+
+        updateNodeInfo()
     }
 
+    /* bottom panel */
+
     document.getElementById("clear-button").onclick = () => {
-        game.graph.edges.forEach(edge => edge.selected = false)
-        game.graph.nodes.forEach(node => node.selected = false)
+        game.graph.clearSelections()
+    }
+
+    document.getElementById("stop-force-input").checked = game.force
+    document.getElementById("stop-force-input").onchange = (e) => {
+        game.force = e.target.checked
+    }
+
+    document.getElementById("triangle-button").onclick = () => {
+        triangle()
+    }
+
+    document.getElementById("pentagon-button").onclick = () => {
+        pentagon()
+    }
+
+    /* side panel */ 
+
+    document.getElementById("directed-edges-input").checked = game.graph.directed
+    document.getElementById("directed-edges-input").onchange = (e) => {
+        game.graph.directed = e.target.checked
     }
 
     document.getElementById("select-mst-kruskal-button").onclick = () => {
@@ -396,10 +499,51 @@ function init() {
         game.graph.clearSelections()
         randomlyColorNodes(game.graph)
     }
-    
-    document.getElementById("triangle-button").onclick = () => {
-        triangle()
+
+    document.getElementById("has-cycle-button").onclick = () => {
+        let hasCycle
+        if (game.graph.directed) {
+            hasCycle = hasCycleDirected(game.graph.edges)
+        } else {
+            hasCycle = hasCycleUndirected(game.graph.edges)
+        }
+
+        let result = hasCycle
+            ? '<span style="color: green">Yes!</span>'
+            : '<span style="color: red">No!</span>'
+
+        document.getElementById("has-cycle-button").innerHTML = "Has Cycle? " + result
     }
+
+    /* action zone */
+
+    document.getElementById("connect-when-inserting-input").checked = game.connectWhenInserting
+    document.getElementById("connect-when-inserting-input").onchange = (e) => {
+        game.connectWhenInserting = e.target.checked
+    }
+
+    document.getElementById("connect-nodes-button").onclick = () => {
+        let selectedNodes = game.graph.nodes.filter(node => node.selected)
+        if (selectedNodes.length == 2) {
+            let from = selectedNodes[0]
+            let to = selectedNodes[1]
+
+            if (!game.graph.edges.some(edge => (edge.from === from && edge.to === to) || (edge.from === to && edge.to === from))) {
+                game.graph.edges.push(new Edge(from, to))
+            }
+        }
+    }
+
+    /* init */
+
+    window.addEventListener("resize", () => {
+        canvas.width = window.innerWidth * 2
+        canvas.height = window.innerHeight * 2
+        clampTransforms()
+    })
+
+    canvas.width = window.innerWidth * 2
+    canvas.height = window.innerHeight * 2
 
     triangle()
 

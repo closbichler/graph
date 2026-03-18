@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="normalize.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="favicon.ico">
     <title>Graph</title>
 </head>
 <body>
@@ -14,10 +14,18 @@
              Your browser does not support the HTML5 canvas tag.
         </canvas>
 
+        <div class="action-zone">
+            <div>
+                <input type="checkbox" id="connect-when-inserting-input">
+                <label for="connect-when-inserting-input">Connect all nodes when inserting</label>
+            </div>
+            <input type="button" id="connect-nodes-button" value="Connect Nodes" class="hidden">
+        </div>
+
         <div class="sidepanel">
             <div class="node-info">
                 <div>
-                    <input type="checkbox" id="directed-edges-input" disabled>
+                    <input type="checkbox" id="directed-edges-input">
                     <label for="directed-edges-input">Directed Edges</label>
                 </div>
                 <div>
@@ -31,6 +39,7 @@
             </div>
 
             <input type="button" id="random-coloring-button" value="Randomly Color Nodes">
+            <button id="has-cycle-button">Has Cycle?</button>
             <input type="button" id="select-mst-kruskal-button" value="Select MST (Kruskal)">
             <input type="button" id="select-mst-prim-button" value="Select MST (Prim)">
             <input type="button" id="color-refinement-button" value="Color Refinement" disabled>
@@ -38,9 +47,15 @@
 
         <div class="bottompanel">
             <input type="button" id="clear-button" value="Clear Selection">
+            
+            <div>
+                <input type="checkbox" id="stop-force-input" checked />
+                <label for="stop-force-input">Force</label>
+            </div>
 
             <div class="right">
                 <input type="button" id="triangle-button" value="Triangle">
+                <input type="button" id="pentagon-button" value="Pentagon">
             </div>
         </div>
     </div>

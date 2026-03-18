@@ -1,4 +1,4 @@
-function hasCycle(edges, node = null, visited = new Set()) {
+function hasCycleUndirected(edges, node = null, visited = new Set()) {
     if (node === null) node = edges[0].from
     if (visited.has(node)) return true
     visited.add(node)
@@ -9,9 +9,13 @@ function hasCycle(edges, node = null, visited = new Set()) {
         let nextEdges = edges.filter(e => e !== edge)
         let nextNode = edge.from === node ? edge.to : edge.from
         let nextVisited = visited
-        if (hasCycle(nextEdges, nextNode, nextVisited)) return true
+        if (hasCycleUndirected(nextEdges, nextNode, nextVisited)) return true
     }
 
+    return false
+}
+
+function hasCycleDirected(edges, node = null, visited = new Set(), recStack = new Set()) {
     return false
 }
 
@@ -24,7 +28,7 @@ function mstKruskal(graph) {
         let edge = edges[0]
         edges = edges.slice(1)
 
-        if (!hasCycle([...selectedEdges, edge])) {
+        if (!hasCycleUndirected([...selectedEdges, edge])) {
             selectedEdges.push(edge)
             cost += edge.weight
         }
