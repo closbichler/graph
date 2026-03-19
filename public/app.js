@@ -142,7 +142,13 @@ class Edge {
     }
 
     clamp() {
-        this.weight = Math.min(Math.max(0, this.weight), 5)
+        // this.weight = Math.min(Math.max(0, this.weight), 50)
+    }
+
+    getDistance() {
+        let dx = this.to.x - this.from.x
+        let dy = this.to.y - this.from.y
+        return Math.sqrt(dx * dx + dy * dy)
     }
 }
 
@@ -155,6 +161,7 @@ const game = {
     force: true,
     overlappingForce: true,
     connectWhenInserting: true,
+    showWeights: false,
     transform: {
         scale: 1,
         offsetX: 0,
@@ -224,6 +231,24 @@ function drawEdge(edge) {
     }
 
     ctx.stroke()
+
+    if (game.showWeights) {
+        let size = Math.min(Math.max(edge.weight * 0.1 + edge.getDistance() * 0.001, 0), 10)
+        let color = relativeLuminance(edge.color) < 128 ? "white" : "black"
+
+        let x = (edge.from.x + edge.to.x) / 2
+        let y = (edge.from.y + edge.to.y) / 2
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(x, y, size * 20 + 10, 0, 2 * Math.PI)
+        ctx.fill()
+
+        ctx.fillStyle = color == "white" ? "black" : "white"
+        ctx.font = `${size * 2 + 2}em Arial`
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText(edge.weight, x, y)
+    }
 }
 
 function drawStatus() {
@@ -271,12 +296,16 @@ function updateNodeInfo() {
     if (nodesSelected == 1 && edgesSelected == 0) {
         let node = game.graph.nodes.find(n => n.selected)
         nodeLabelInput.value = node.label
+        nodeLabelInput.disabled = false
     } else if (edgesSelected == 1 && nodesSelected == 0) {
         let edge = game.graph.edges.find(e => e.selected)
         edgeSizeInput.value = edge.weight
+        edgeSizeInput.disabled = false
     } else {
         nodeLabelInput.value = ""
+        nodeLabelInput.disabled = true
         edgeSizeInput.value = ""
+        edgeSizeInput.disabled = true
     }
 
     /* action zone */
@@ -448,9 +477,9 @@ function init() {
         if (e.key === "Delete") {
             game.graph.edges.filter(edge => edge.selected || edge.from.selected || edge.to.selected).forEach(edge => edge.shouldBeDeleted = true)
             game.graph.nodes.filter(node => node.selected).forEach(node => node.shouldBeDeleted = true)
+            
+            updateNodeInfo()
         }
-
-        updateNodeInfo()
     }
 
     /* bottom panel */
@@ -501,6 +530,30 @@ function init() {
     document.getElementById("directed-edges-input").checked = game.graph.directed
     document.getElementById("directed-edges-input").onchange = (e) => {
         game.graph.directed = e.target.checked
+    }
+
+    document.getElementById("show-weights-input").checked = game.showWeights
+    document.getElementById("show-weights-input").onchange = (e) => {
+        game.showWeights = e.target.checked
+    }
+
+    document.getElementById("node-label-input").oninput = (e) => {
+        let node = game.graph.nodes.find(n => n.selected)
+        if (node) {
+            node.label = e.target.value
+            updateNodeInfo()
+        }
+    }
+
+    document.getElementById("edge-weight-input").oninput = (e) => {
+        let edge = game.graph.edges.find(e => e.selected)
+        if (edge) {
+            let value = parseInt(e.target.value)
+            if (!isNaN(value)) {
+                edge.weight = value
+                updateNodeInfo()
+            }
+        }
     }
 
     document.getElementById("select-mst-kruskal-button").onclick = () => {
