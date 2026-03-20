@@ -4,7 +4,8 @@ Simple webapp for graph algorithms
 ## Algorithms
 - MST with Kruskal's algorithm
 - MST with Prim's algorithm
-- Cycle detection
+- Cycle detection (directed and undirected)
+- Color refinement
 
 ## TODO
 - Multiple graphs
@@ -12,3 +13,4 @@ Simple webapp for graph algorithms
 - Fix Kruskal (it has a bug when having two graphs)
 - Fix directed cycle detection
 - color connected components
+- Visualize trees specifically and implement tree algorithms (rotation, traversal etc.)
