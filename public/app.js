@@ -6,8 +6,12 @@ class Graph {
     }
 
     update(timeStep) {
-        this.edges = this.edges.filter(edge => !edge.shouldBeDeleted)
-        this.nodes = this.nodes.filter(node => !node.shouldBeDeleted)
+        if (this.edges.some(edge => edge.shouldBeDeleted) || this.nodes.some(node => node.shouldBeDeleted)) {
+            this.edges = this.edges.filter(edge => !edge.shouldBeDeleted)
+            this.nodes = this.nodes.filter(node => !node.shouldBeDeleted)
+            updateNodeInfo()
+        }
+
 
         for (let node of this.nodes) {
             node.update(timeStep)
@@ -45,6 +49,7 @@ class Graph {
             edge.selected = false
             edge.color = "#000000"
         }
+        updateNodeInfo()
     }
 }
 
@@ -477,8 +482,6 @@ function init() {
         if (e.key === "Delete") {
             game.graph.edges.filter(edge => edge.selected || edge.from.selected || edge.to.selected).forEach(edge => edge.shouldBeDeleted = true)
             game.graph.nodes.filter(node => node.selected).forEach(node => node.shouldBeDeleted = true)
-            
-            updateNodeInfo()
         }
     }
 
@@ -495,10 +498,12 @@ function init() {
 
     document.getElementById("triangle-button").onclick = () => {
         triangle()
+        updateNodeInfo()
     }
 
     document.getElementById("pentagon-button").onclick = () => {
         pentagon()
+        updateNodeInfo()
     }
 
     document.getElementById("adjacency-matrix-button").onclick = () => {
@@ -569,6 +574,7 @@ function init() {
     }
     
     document.getElementById("color-refinement-button").onclick = () => {
+        game.graph.clearSelections()
         colorRefinementStep(game.graph)
     }
     
