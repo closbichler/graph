@@ -4,25 +4,48 @@ function getRandomColor() {
         .padStart(6, "0")}`;
 }
 
-function hasCycleUndirected(edges, node = null, visited = new Set()) {
-    if (node === null) node = edges[0].from
-    if (visited.has(node)) return true
-    visited.add(node)
+function getAdjacencyMap(edges) {
+    let adjacency = new Map()
+    for (let edge of edges) {
+        if (!adjacency.has(edge.from)) adjacency.set(edge.from, [])
+        if (!adjacency.has(edge.to))   adjacency.set(edge.to, [])
+        adjacency.get(edge.from).push(edge.to)
+        adjacency.get(edge.to).push(edge.from)
+    }
+    return adjacency
+}
 
-    let nextEdges = edges.filter(e => e.from === node || e.to === node)
+function dfs(adjacency, current, parent, visited) {
+    visited.add(current)
 
-    for (let edge of nextEdges) {
-        let nextEdges = edges.filter(e => e !== edge)
-        let nextNode = edge.from === node ? edge.to : edge.from
-        let nextVisited = visited
-        if (hasCycleUndirected(nextEdges, nextNode, nextVisited)) return true
+    for (let neighbor of adjacency.get(current)) {
+        if (!visited.has(neighbor)) {
+            if (dfs(adjacency, neighbor, current, visited)) return true
+        } else if (neighbor !== parent) {
+            return true
+        }
     }
 
     return false
 }
 
-function hasCycleDirected(edges, node = null, visited = new Set(), recStack = new Set()) {
+function hasCycleUndirected(edges) {
+    if (edges.length === 0) return false
+
+    let adjacency = getAdjacencyMap(edges)
+    let visited = new Set()
+
+    for (let startNode of adjacency.keys()) {
+        if (!visited.has(startNode)) {
+            if (dfs(adjacency, startNode, null, visited)) return true
+        }
+    }
+
     return false
+}
+
+function hasCycleDirected(edges) {
+    alert("Not implemented yet")
 }
 
 function mstKruskal(graph) {
