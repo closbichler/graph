@@ -12,7 +12,6 @@ class Graph {
             updateNodeInfo()
         }
 
-
         for (let node of this.nodes) {
             node.update(timeStep)
 
@@ -581,6 +580,11 @@ function init() {
     document.getElementById("random-coloring-button").onclick = () => {
         game.graph.clearSelections()
         randomlyColorNodes(game.graph)
+    }
+
+    document.getElementById("color-components-button").onclick = () => {
+        game.graph.clearSelections()
+        colorConnectedComponents(game.graph)
     }
 
     document.getElementById("has-cycle-button").onclick = () => {

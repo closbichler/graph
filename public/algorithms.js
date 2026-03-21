@@ -131,3 +131,31 @@ function colorRefinementStep(graph) {
         node.color = newColors.get(signature)
     }
 }
+
+function colorConnectedComponents(graph) {
+    let adjacency = getAdjacencyMap(graph.edges)
+    let visited = new Set()
+
+    for (let startNode of graph.nodes) {
+        if (visited.has(startNode)) continue
+
+        let componentNodes = []
+        let stack = [startNode]
+
+        while (stack.length > 0) {
+            let node = stack.pop()
+            if (!visited.has(node)) {
+                visited.add(node)
+                componentNodes.push(node)
+                if (adjacency.get(node)) {
+                    stack.push(...adjacency.get(node))
+                }
+            }
+        }
+
+        let color = getRandomColor()
+        for (let node of componentNodes) {
+            node.color = color
+        }
+    }
+}

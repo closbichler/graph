@@ -9,8 +9,7 @@ Simple webapp for graph algorithms
 
 ## TODO
 - Support creation of multiple disconnected graphs
-- Influence edge direction when inserting
-- Implement cycle detection in directed graphs
-- Color connected components
 - Visualize trees specifically and implement tree algorithms (rotation, traversal etc.)
 - Correctly support switch from directed/undirected graphs
+    - Influence edge direction when inserting
+    - Implement cycle detection in directed graphs
