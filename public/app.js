@@ -459,11 +459,13 @@ function showWithFade(el) {
 
 function switchMode(mode) {
     if (mode === "graph") {
+        document.title = "Fun With Graphs"
         game.graph.tree = false
         game.graph.treeRoot = null
         document.getElementsByTagName("h1")[0].children[0].classList.remove("title-small")
         document.getElementsByTagName("h1")[0].children[1].classList.add("title-small")
     } else if (mode === "tree") {
+        document.title = "Fun With Trees"
         document.getElementsByTagName("h1")[0].children[1].classList.remove("title-small")
         document.getElementsByTagName("h1")[0].children[0].classList.add("title-small")
         game.connectWhenInserting = false
@@ -611,6 +613,27 @@ function init() {
                     game.graph.edges.push(new Edge(game.graph.nodes[i], game.graph.nodes[j], parseFloat(values[j])))
                 }
             }
+        }
+    }
+
+    document.getElementById("random-graph-button").onclick = () => {
+        let size = parseInt(prompt("Enter number of nodes:"))
+        if (isNaN(size) || size <= 0) return
+
+        game.graph.nodes = []
+        game.graph.edges = []
+
+        for (let i = 0; i < size; i++) {
+            let x = Math.random() * canvas.width
+            let y = Math.random() * canvas.height
+            game.graph.nodes.push(new Node(x, y, String.fromCharCode(65 + i)))
+        }
+
+        let numEdges = size * Math.random()
+        for (let i = 0; i < numEdges; i++) {
+            let j = Math.floor(Math.random() * size)
+            let k = Math.floor(Math.random() * size)
+            game.graph.edges.push(new Edge(game.graph.nodes[j], game.graph.nodes[k], Math.floor(Math.random() * 5) + 1))
         }
     }
 

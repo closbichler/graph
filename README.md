@@ -1,7 +1,7 @@
-# Graph
+# Fun With Graphs
 Simple webapp for graph algorithms 
 
-## Algorithms
+## Implemented Algorithms
 - MST with Kruskal's algorithm
 - MST with Prim's algorithm
 - Cycle detection (in undirected graphs)
@@ -12,6 +12,10 @@ Simple webapp for graph algorithms
 - Implement tree algorithms (rotation, traversal etc.)
 - Color refinement evaluation (statistics) and status if finished
 - Manage graph settings centralized (UI and code base)
-- Correctly support switch from directed/undirected graphs
+- Better visualize big graphs
+- Better graph input usability
     - Influence edge direction when inserting
+    - Automatically connect new added node to all selected nodes
+    - Deselect after insertion
+- Correctly support switch from directed/undirected graphs
     - Implement cycle detection in directed graphs

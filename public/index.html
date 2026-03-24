@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="normalize.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.ico">
-    <title>Graph</title>
+    <title>Fun With Graphs</title>
 </head>
 <body>
     <div class="app">
@@ -47,6 +47,10 @@
             <button id="has-cycle-button">Has cycle?</button>
             <input type="button" id="select-mst-kruskal-button" value="Select MST (Kruskal)">
             <input type="button" id="select-mst-prim-button" value="Select MST (Prim)">
+            <input type="button" id="select-vertex-cover-button" value="Select min. vertex cover" disabled>
+            <input type="button" id="select-dominating-set-button" value="Select min. dominating set" disabled>
+            <input type="button" id="select-maximum-matching-button" value="Select max. matching" disabled>
+            <input type="button" id="select-maximum-matching-button" value="Select max. independent set" disabled>
             <input type="button" id="random-coloring-button" value="Color nodes randomly">
             <input type="button" id="color-components-button" value="Color components">
             <input type="button" id="color-refinement-button" value="Color refinement step">
@@ -64,6 +68,7 @@
                 <input type="button" id="triangle-button" value="Triangle">
                 <input type="button" id="pentagon-button" value="Pentagon">
                 <input type="button" id="adjacency-matrix-button" value="Input adjacency matrix">
+                <input type="button" id="random-graph-button" value="Random graph with size k">
             </div>
         </div>
     </div>
