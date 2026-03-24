@@ -159,3 +159,22 @@ function colorConnectedComponents(graph) {
         }
     }
 }
+
+function isTree(graph) {
+    if (graph.nodes.length === 0) return true
+    if (graph.edges.length !== graph.nodes.length - 1) return false
+
+    let adjacency = getAdjacencyMap(graph.edges)
+    let visited = new Set()
+    let stack = [graph.nodes[0]]
+
+    while (stack.length > 0) {
+        let node = stack.pop()
+        if (visited.has(node)) continue
+
+        visited.add(node)
+        stack.push(...(adjacency.get(node) || []))
+    }
+
+    return visited.size === graph.nodes.length
+}

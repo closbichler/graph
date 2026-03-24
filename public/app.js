@@ -2,7 +2,11 @@ class Graph {
     constructor() {
         this.nodes = []
         this.edges = []
+        
         this.directed = false
+
+        this.tree = false
+        this.treeRoot = null
     }
 
     update(timeStep) {
@@ -14,16 +18,29 @@ class Graph {
 
         for (let node of this.nodes) {
             node.update(timeStep)
+        }
 
-            if (game.force && game.overlappingForce) {
-                for (let otherNode of this.nodes) {
-                    if (node !== otherNode) {
-                        let dx = node.x - otherNode.x
-                        let dy = node.y - otherNode.y
-                        let distance = Math.sqrt(dx * dx + dy * dy)
-                        if (distance < node.size + otherNode.size) {
-                            node.applyForce(10, dx, dy)
-                        }
+        if (game.force && game.overlappingForce) {
+            for (let i = 0; i < this.nodes.length; i++) {
+                for (let j = i + 1; j < this.nodes.length; j++) {
+                    let node = this.nodes[i]
+                    let otherNode = this.nodes[j]
+
+                    let dx = node.x - otherNode.x
+                    let dy = node.y - otherNode.y
+                    let minDistance = node.size + otherNode.size
+                    let distanceSquared = dx * dx + dy * dy
+
+                    if (distanceSquared > 0 && distanceSquared < minDistance * minDistance) {
+                        let distance = Math.sqrt(distanceSquared)
+                        let nx = dx / distance
+                        let ny = dy / distance
+                        let force = 10
+
+                        node.velocityX += nx * force
+                        node.velocityY += ny * force
+                        otherNode.velocityX -= nx * force
+                        otherNode.velocityY -= ny * force
                     }
                 }
             }
@@ -32,9 +49,34 @@ class Graph {
         for (let edge of this.edges) {
             edge.update(timeStep)
 
-            if (game.force) {
+            if (game.force && !this.tree) {
                 edge.applyEdgeForces(this.nodes.length * 30, 0.08)
             }
+        }
+
+        if (game.force && this.tree) {
+            this.applyTreeForces()
+        }
+    }
+
+    applyTreeForces(parent = undefined, depth = 0, maxdepth = 2) {
+        if (!parent) {
+            if (this.nodes.length === 0) return
+            if (!this.treeRoot) this.treeRoot = this.nodes[0]
+            parent = this.treeRoot
+        }
+
+        let distanceX = 100 * (maxdepth - depth) + parent.size * 3
+        let distanceY = 100 + parent.size * 3
+        let force = 50
+
+        let children = this.edges.filter(edge => edge.from === parent).map(edge => edge.to)
+        let middleChild = (children.length - 1) / 2
+        for (let [i, node] of children.entries()) {
+            let x = parent.x + (i - middleChild) * distanceX
+            let y = parent.y +  distanceY
+            node.moveTo(force, x, y)
+            this.applyTreeForces(node, depth + 1, maxdepth)
         }
     }
 
@@ -93,6 +135,14 @@ class Node {
         let length = Math.sqrt(dx * dx + dy * dy)
         this.velocityX += (dx / length) * force
         this.velocityY += (dy / length) * force
+    }
+
+    moveTo(force, x, y) {
+        let distance = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2)
+        if (distance <= 0.1) return
+        let dx = x - this.x
+        let dy = y - this.y
+        this.applyForce(force * distance * 0.01, dx, dy)
     }
 }
 
@@ -180,14 +230,6 @@ function relativeLuminance(hexColor) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-function drawTitle() {
-    ctx.fillStyle = "black"
-    ctx.font = "8em Times"
-    ctx.textAlign = "left"
-    ctx.textBaseline = "top"
-    ctx.fillText("Graph", 10, 10)
-}
-
 function drawNode(node) {
     ctx.fillStyle = node.selected ? "red" : node.color
     ctx.beginPath()
@@ -260,16 +302,16 @@ function drawStatus() {
     let edgesSelected = game.graph.edges.filter(edge => edge.selected).length
     
     let text = ""
-    if (nodesSelected == 0 && edgesSelected == 0)      text += `${game.graph.nodes.length} Nodes, ${game.graph.edges.length} Edges`
-    else if (nodesSelected == 1 && edgesSelected == 0) text += `Node ${game.graph.nodes.find(n => n.selected).label} has been selected`
-    else if (nodesSelected > 1 && edgesSelected == 0)  text += `${nodesSelected} Nodes have been selected`
-    else                                               text += `${nodesSelected} Nodes and ${edgesSelected} Edges have been selected`
+    if (nodesSelected == 0 && edgesSelected == 0)      text += `${game.graph.nodes.length} nodes, ${game.graph.edges.length} edges`
+    else if (nodesSelected == 1 && edgesSelected == 0) text += `Node "${game.graph.nodes.find(n => n.selected).label}" has been selected`
+    else if (nodesSelected > 1 && edgesSelected == 0)  text += `${nodesSelected} nodes have been selected`
+    else                                               text += `${nodesSelected} nodes and ${edgesSelected} edges have been selected`
 
     ctx.fillStyle = "gray"
     ctx.font = "2.5em Arial"
-    ctx.textAlign = "left"
+    ctx.textAlign = "center"
     ctx.textBaseline = "top"
-    ctx.fillText(text, 15, 160)
+    ctx.fillText(text, canvas.width / 2, 15)
 }
 
 function draw(alpha) {
@@ -286,8 +328,7 @@ function draw(alpha) {
 
     ctx.resetTransform()
 
-    drawTitle()
-    drawStatus()
+    // drawStatus()
 }
 
 function updateNodeInfo() {
@@ -380,6 +421,25 @@ function pentagon() {
     }
 }
 
+function tree() {
+    let middleX = canvas.width / 2
+    let middleY = canvas.height / 2
+    
+    game.graph.nodes = []
+    game.graph.edges = []
+    for (let i = 0; i < 7; i++) {
+        let angle = (i / 7) * 2 * Math.PI - Math.PI / 2
+        let radius = 200 + (i % 3) * 50
+        game.graph.nodes.push(new Node(middleX + Math.cos(angle) * radius, middleY + Math.sin(angle) * radius, String.fromCharCode(65 + i)))
+    }
+    game.graph.edges.push(new Edge(game.graph.nodes[0], game.graph.nodes[1], Math.floor(Math.random() * 5) + 1))
+    game.graph.edges.push(new Edge(game.graph.nodes[0], game.graph.nodes[2], Math.floor(Math.random() * 5) + 1))
+    game.graph.edges.push(new Edge(game.graph.nodes[1], game.graph.nodes[3], Math.floor(Math.random() * 5) + 1))
+    game.graph.edges.push(new Edge(game.graph.nodes[1], game.graph.nodes[4], Math.floor(Math.random() * 5) + 1))
+    game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[5], Math.floor(Math.random() * 5) + 1))
+    game.graph.edges.push(new Edge(game.graph.nodes[2], game.graph.nodes[6], Math.floor(Math.random() * 5) + 1))
+}
+
 function hideWithFade(el) {
     el.classList.add("fade-out")
 
@@ -395,6 +455,31 @@ function showWithFade(el) {
     requestAnimationFrame(() => {
         el.classList.remove("fade-out")
     })
+}
+
+function switchMode(mode) {
+    if (mode === "graph") {
+        game.graph.tree = false
+        game.graph.treeRoot = null
+        document.getElementsByTagName("h1")[0].children[0].classList.remove("title-small")
+        document.getElementsByTagName("h1")[0].children[1].classList.add("title-small")
+    } else if (mode === "tree") {
+        document.getElementsByTagName("h1")[0].children[1].classList.remove("title-small")
+        document.getElementsByTagName("h1")[0].children[0].classList.add("title-small")
+        game.connectWhenInserting = false
+        document.getElementById("connect-when-inserting-input").checked = game.connectWhenInserting
+    
+        if (isTree(game.graph)) {
+            game.graph.tree = true
+            game.graph.treeRoot = game.graph.nodes.find(node => node.selected) || game.graph.nodes[0]
+        } else {
+            tree()
+            game.graph.tree = true
+            game.graph.treeRoot = game.graph.nodes[0]
+        }
+
+        updateNodeInfo()
+    }
 }
 
 function init() {
@@ -599,7 +684,7 @@ function init() {
             ? '<span style="color: green">Yes!</span>'
             : '<span style="color: red">No!</span>'
 
-        document.getElementById("has-cycle-button").innerHTML = "Has Cycle? " + result
+        document.getElementById("has-cycle-button").innerHTML = "Has cycle? " + result
     }
 
     /* action zone */

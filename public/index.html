@@ -15,6 +15,8 @@
         </canvas>
 
         <div class="action-zone">
+            <h1><span onclick="switchMode('graph')">Graph</span> <span onclick="switchMode('tree')" class="title-small">Tree</span></h1>
+
             <div>
                 <input type="checkbox" id="connect-when-inserting-input">
                 <label for="connect-when-inserting-input">Connect all</label>
@@ -26,32 +28,32 @@
             <div class="node-info">
                 <div>
                     <input type="checkbox" id="directed-edges-input" disabled>
-                    <label for="directed-edges-input">Directed Edges</label>
+                    <label for="directed-edges-input">Directed edges</label>
                 </div>
                 <div>
                     <input type="checkbox" id="show-weights-input">
-                    <label for="show-weights-input">Show Weights</label>
+                    <label for="show-weights-input">Show weights</label>
                 </div>
                 <div>
                     <input type="text" id="node-label-input" style="width: 3rem;" disabled>
-                    <label for="node-label-input">Node Label</label>
+                    <label for="node-label-input">Node label</label>
                 </div>
                 <div>
                     <input type="text" id="edge-weight-input" style="width: 3rem;" disabled>
-                    <label for="edge-weight-input">Edge Weight</label>
+                    <label for="edge-weight-input">Edge weight</label>
                 </div>
             </div>
 
-            <input type="button" id="random-coloring-button" value="Randomly Color Nodes">
-            <button id="has-cycle-button">Has Cycle?</button>
+            <button id="has-cycle-button">Has cycle?</button>
             <input type="button" id="select-mst-kruskal-button" value="Select MST (Kruskal)">
             <input type="button" id="select-mst-prim-button" value="Select MST (Prim)">
-            <input type="button" id="color-components-button" value="Color connected components">
-            <input type="button" id="color-refinement-button" value="Color Refinement Step">
+            <input type="button" id="random-coloring-button" value="Color nodes randomly">
+            <input type="button" id="color-components-button" value="Color components">
+            <input type="button" id="color-refinement-button" value="Color refinement step">
         </div>
 
         <div class="bottompanel">
-            <input type="button" id="clear-button" value="Clear Selection">
+            <input type="button" id="clear-button" value="Clear selection">
             
             <div>
                 <input type="checkbox" id="stop-force-input" checked />
@@ -61,7 +63,7 @@
             <div class="right">
                 <input type="button" id="triangle-button" value="Triangle">
                 <input type="button" id="pentagon-button" value="Pentagon">
-                <input type="button" id="adjacency-matrix-button" value="Input Adjacency Matrix">
+                <input type="button" id="adjacency-matrix-button" value="Input adjacency matrix">
             </div>
         </div>
     </div>
